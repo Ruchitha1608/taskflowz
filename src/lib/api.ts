@@ -1,7 +1,3 @@
-
-// This is a mock API implementation 
-// In a real app, you would replace these functions with actual API calls
-
 import { format } from 'date-fns';
 
 export type Task = {
@@ -23,125 +19,95 @@ export type File = {
   size: number;
 };
 
-// Mock data
-const mockTasks: Task[] = [
-  {
-    id: '1',
-    title: 'Design system update',
-    description: 'Update the design system with new components and styles',
-    dueDate: new Date(Date.now() + 86400000 * 2), // 2 days from now
-    completed: false,
-    files: [
-      {
-        id: '1',
-        name: 'design-specs.pdf',
-        url: '#',
-        type: 'application/pdf',
-        size: 2500000,
-      }
-    ],
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '2',
-    title: 'User research interviews',
-    description: 'Conduct user interviews for the new feature',
-    dueDate: new Date(Date.now() + 86400000 * 5), // 5 days from now
-    completed: false,
-    files: [],
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '3',
-    title: 'Marketing campaign',
-    description: 'Prepare the Q4 marketing campaign materials',
-    dueDate: new Date(Date.now() + 86400000 * 10), // 10 days from now
-    completed: false,
-    files: [
-      {
-        id: '2',
-        name: 'campaign-brief.docx',
-        url: '#',
-        type: 'application/docx',
-        size: 1200000,
-      },
-      {
-        id: '3',
-        name: 'assets.zip',
-        url: '#',
-        type: 'application/zip',
-        size: 5000000,
-      }
-    ],
-    createdAt: new Date(),
-    updatedAt: new Date(),
+const API_URL = 'http://localhost:5000/api';
+
+// Helper function to get token
+const getToken = () => localStorage.getItem('token');
+
+// Helper function to make authenticated API requests
+const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
+  const token = getToken();
+  
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...options.headers
+  };
+  
+  const response = await fetch(`${API_URL}${endpoint}`, {
+    ...options,
+    headers
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `API error: ${response.status}`);
   }
-];
+  
+  return response.json();
+};
+
+// Transform task from API to frontend format
+const transformTask = (task: any): Task => ({
+  id: task._id,
+  title: task.title,
+  description: task.description || '',
+  dueDate: new Date(task.dueDate),
+  completed: task.completed,
+  files: task.files || [],
+  createdAt: new Date(task.createdAt),
+  updatedAt: new Date(task.updatedAt)
+});
 
 // Task APIs
 export const getTasks = async (): Promise<Task[]> => {
-  await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
-  return [...mockTasks];
+  try {
+    const data = await apiRequest('/tasks');
+    return data.map(transformTask);
+  } catch (error) {
+    console.error('Error fetching tasks:', error);
+    return [];
+  }
 };
 
 export const getTask = async (id: string): Promise<Task> => {
-  await new Promise(resolve => setTimeout(resolve, 300));
-  const task = mockTasks.find(task => task.id === id);
-  if (!task) throw new Error('Task not found');
-  return { ...task };
+  const data = await apiRequest(`/tasks/${id}`);
+  return transformTask(data);
 };
 
 export const createTask = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Promise<Task> => {
-  await new Promise(resolve => setTimeout(resolve, 800));
-  const newTask: Task = {
-    ...task,
-    id: Math.random().toString(36).substring(2, 9),
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-  mockTasks.push(newTask);
-  return newTask;
+  const data = await apiRequest('/tasks', {
+    method: 'POST',
+    body: JSON.stringify(task)
+  });
+  return transformTask(data);
 };
 
 export const updateTask = async (id: string, updates: Partial<Task>): Promise<Task> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  const index = mockTasks.findIndex(task => task.id === id);
-  if (index === -1) throw new Error('Task not found');
-  
-  const updatedTask = {
-    ...mockTasks[index],
-    ...updates,
-    updatedAt: new Date(),
-  };
-  mockTasks[index] = updatedTask;
-  return updatedTask;
+  const data = await apiRequest(`/tasks/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(updates)
+  });
+  return transformTask(data);
 };
 
 export const deleteTask = async (id: string): Promise<void> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  const index = mockTasks.findIndex(task => task.id === id);
-  if (index === -1) throw new Error('Task not found');
-  mockTasks.splice(index, 1);
+  await apiRequest(`/tasks/${id}`, {
+    method: 'DELETE'
+  });
 };
 
 export const completeTask = async (id: string): Promise<Task> => {
-  await new Promise(resolve => setTimeout(resolve, 300));
-  const index = mockTasks.findIndex(task => task.id === id);
-  if (index === -1) throw new Error('Task not found');
-  
-  const updatedTask = {
-    ...mockTasks[index],
-    completed: true,
-    updatedAt: new Date(),
-  };
-  mockTasks[index] = updatedTask;
-  return updatedTask;
+  const data = await apiRequest(`/tasks/${id}/complete`, {
+    method: 'PATCH'
+  });
+  return transformTask(data);
 };
 
 // File APIs
 export const uploadFile = async (file: globalThis.File): Promise<File> => {
+  // For real implementation, you would use FormData and upload to your server
+  // For now, we'll keep the mock implementation
   await new Promise(resolve => setTimeout(resolve, 1000));
   return {
     id: Math.random().toString(36).substring(2, 9),
@@ -153,15 +119,13 @@ export const uploadFile = async (file: globalThis.File): Promise<File> => {
 };
 
 export const deleteFile = async (taskId: string, fileId: string): Promise<void> => {
-  await new Promise(resolve => setTimeout(resolve, 300));
-  const taskIndex = mockTasks.findIndex(task => task.id === taskId);
-  if (taskIndex === -1) throw new Error('Task not found');
-  
-  const fileIndex = mockTasks[taskIndex].files.findIndex(file => file.id === fileId);
-  if (fileIndex === -1) throw new Error('File not found');
-  
-  mockTasks[taskIndex].files.splice(fileIndex, 1);
-  mockTasks[taskIndex].updatedAt = new Date();
+  // In a real implementation, this would call your API
+  await apiRequest(`/tasks/${taskId}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      files: (await getTask(taskId)).files.filter(file => file.id !== fileId)
+    })
+  });
 };
 
 // Helper functions

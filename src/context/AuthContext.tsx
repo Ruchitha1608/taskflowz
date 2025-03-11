@@ -21,6 +21,8 @@ type AuthContextType = {
   signup: (name: string, email: string, password: string) => Promise<void>;
 };
 
+const API_URL = 'http://localhost:5000/api';
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -32,10 +34,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // In a real app, you would verify the token with your backend
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
+        const token = localStorage.getItem('token');
+        if (token) {
+          // Verify token with backend
+          const response = await fetch(`${API_URL}/auth/me`, {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            setUser(data.user);
+          } else {
+            // Token is invalid, remove it
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+          }
         }
       } catch (error) {
         console.error('Authentication error:', error);
@@ -47,31 +62,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkAuth();
   }, []);
 
-  // Mock login function - replace with actual implementation
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // This is a mock implementation
-      // In a real app, you would call your authentication API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      });
       
-      // Mock user data
-      const mockUser = {
-        id: '1',
-        name: 'John Doe',
-        email: email,
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
-      };
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Login failed');
+      }
       
-      setUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      localStorage.setItem('token', 'mock-jwt-token');
+      const data = await response.json();
+      
+      setUser(data.user);
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
       
       toast.success('Logged in successfully');
       navigate('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
-      toast.error('Invalid email or password');
+      toast.error(error.message || 'Invalid email or password');
       throw error;
     } finally {
       setIsLoading(false);
@@ -81,25 +98,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginWithGoogle = async () => {
     setIsLoading(true);
     try {
-      // Mock implementation
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // This is a mock implementation since we need Google SDK integration
+      // In a real app, you would use the Google Sign-In SDK
       
-      const mockUser = {
+      // Mock Google login for demonstration
+      const mockGoogleUser = {
         id: '2',
         name: 'Google User',
         email: 'google.user@example.com',
         avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=google',
       };
       
-      setUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
+      setUser(mockGoogleUser);
+      localStorage.setItem('user', JSON.stringify(mockGoogleUser));
       localStorage.setItem('token', 'mock-jwt-token');
       
       toast.success('Logged in with Google');
       navigate('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Google login error:', error);
-      toast.error('Google login failed');
+      toast.error(error.message || 'Google login failed');
       throw error;
     } finally {
       setIsLoading(false);
@@ -109,25 +127,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginWithGithub = async () => {
     setIsLoading(true);
     try {
-      // Mock implementation
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Mock GitHub login for demonstration
+      // In a real app, you would use GitHub OAuth flow
       
-      const mockUser = {
+      const mockGithubUser = {
         id: '3',
         name: 'GitHub User',
         email: 'github.user@example.com',
         avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=github',
       };
       
-      setUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
+      setUser(mockGithubUser);
+      localStorage.setItem('user', JSON.stringify(mockGithubUser));
       localStorage.setItem('token', 'mock-jwt-token');
       
       toast.success('Logged in with GitHub');
       navigate('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       console.error('GitHub login error:', error);
-      toast.error('GitHub login failed');
+      toast.error(error.message || 'GitHub login failed');
       throw error;
     } finally {
       setIsLoading(false);
@@ -137,25 +155,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signup = async (name: string, email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Mock implementation
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch(`${API_URL}/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name, email, password })
+      });
       
-      const mockUser = {
-        id: '4',
-        name: name,
-        email: email,
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
-      };
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Signup failed');
+      }
       
-      setUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      localStorage.setItem('token', 'mock-jwt-token');
+      const data = await response.json();
+      
+      setUser(data.user);
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
       
       toast.success('Account created successfully');
       navigate('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Signup error:', error);
-      toast.error('Signup failed');
+      toast.error(error.message || 'Signup failed');
       throw error;
     } finally {
       setIsLoading(false);
