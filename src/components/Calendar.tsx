@@ -17,16 +17,27 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Task } from '@/lib/api';
+import { useQuery } from '@tanstack/react-query';
+import { getTasks } from '@/lib/api';
 
 interface CalendarViewProps {
-  tasks: Task[];
+  tasks?: Task[];
   onSelectDate: (date: Date) => void;
 }
 
-const CalendarView: React.FC<CalendarViewProps> = ({ tasks, onSelectDate }) => {
+const CalendarView: React.FC<CalendarViewProps> = ({ tasks = [], onSelectDate }) => {
   const today = startOfToday();
   const [selectedDay, setSelectedDay] = React.useState(today);
   const [currentMonth, setCurrentMonth] = React.useState(format(today, 'MMM-yyyy'));
+  
+  // Fetch tasks if none provided
+  const { data: fetchedTasks, isLoading } = useQuery({
+    queryKey: ['tasks'],
+    queryFn: getTasks,
+    enabled: !tasks.length
+  });
+  
+  const allTasks = tasks.length ? tasks : (fetchedTasks || []);
   
   const firstDayCurrentMonth = parse(currentMonth, 'MMM-yyyy', new Date());
   
@@ -49,7 +60,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks, onSelectDate }) => {
   
   // Get tasks for a specific day
   const getTasksForDay = (day: Date) => {
-    return tasks.filter(task => isSameDay(task.dueDate, day));
+    return allTasks.filter(task => isSameDay(task.dueDate, day));
   };
   
   // Handle day selection
@@ -142,22 +153,28 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks, onSelectDate }) => {
                   </time>
                 </div>
                 <div className="space-y-1">
-                  {tasksForDay.slice(0, 3).map((task) => (
-                    <div
-                      key={task.id}
-                      className={cn(
-                        "text-xs truncate px-1 py-0.5 rounded",
-                        task.completed ? "line-through text-muted-foreground bg-muted/50" : "bg-primary/10 text-primary"
+                  {isLoading ? (
+                    <div className="text-xs text-muted-foreground">Loading...</div>
+                  ) : (
+                    <>
+                      {tasksForDay.slice(0, 3).map((task) => (
+                        <div
+                          key={task.id}
+                          className={cn(
+                            "text-xs truncate px-1 py-0.5 rounded",
+                            task.completed ? "line-through text-muted-foreground bg-muted/50" : "bg-primary/10 text-primary"
+                          )}
+                          title={task.title}
+                        >
+                          {task.title}
+                        </div>
+                      ))}
+                      {tasksForDay.length > 3 && (
+                        <div className="text-xs text-muted-foreground px-1">
+                          +{tasksForDay.length - 3} more
+                        </div>
                       )}
-                      title={task.title}
-                    >
-                      {task.title}
-                    </div>
-                  ))}
-                  {tasksForDay.length > 3 && (
-                    <div className="text-xs text-muted-foreground px-1">
-                      +{tasksForDay.length - 3} more
-                    </div>
+                    </>
                   )}
                 </div>
               </div>
