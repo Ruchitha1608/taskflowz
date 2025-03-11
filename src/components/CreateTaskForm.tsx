@@ -67,16 +67,16 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
   });
 
   const handleFormSubmit = (values: FormValues) => {
-    // Ensure we have a title (required by the Task type)
+    // Ensure we have all required fields
     const taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'> = {
-      title: values.title, // Explicitly use the title from values
-      description: values.description || "", // Make sure we provide a string even if undefined
+      title: values.title,
+      description: values.description || "",
       dueDate: values.dueDate,
       completed: initialData?.completed || false,
       files: files.map((file, index) => ({
         id: String(index),
         name: file.name,
-        url: file.type.includes('image') ? URL.createObjectURL(file) : '#',
+        url: URL.createObjectURL(file),
         type: file.type,
         size: file.size,
       })),

@@ -1,21 +1,20 @@
 
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const bcrypt = require('bcryptjs');
 const { OAuth2Client } = require('google-auth-library');
+const User = require('../models/User');
 const router = express.Router();
 
-// Google OAuth client
-const googleClient = new OAuth2Client();
-
-// Middleware to verify JWT token
+// Authentication middleware
 const auth = async (req, res, next) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
+    
     if (!token) {
       return res.status(401).json({ error: 'Authentication required' });
     }
-
+    
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id);
     
@@ -26,7 +25,7 @@ const auth = async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
-    res.status(401).json({ error: 'Invalid authentication token' });
+    res.status(401).json({ error: 'Authentication failed' });
   }
 };
 
@@ -37,6 +36,7 @@ router.post('/register', async (req, res) => {
     
     // Check if user already exists
     let user = await User.findOne({ email });
+    
     if (user) {
       return res.status(400).json({ error: 'User already exists' });
     }
@@ -46,13 +46,12 @@ router.post('/register', async (req, res) => {
       name,
       email,
       password,
-      provider: 'local',
       avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`
     });
     
     await user.save();
     
-    // Create JWT token
+    // Generate JWT token
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
     
     res.json({
@@ -65,7 +64,7 @@ router.post('/register', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error(error);
+    console.error('Registration error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -75,19 +74,21 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     
-    // Find user
+    // Check if user exists
     const user = await User.findOne({ email });
+    
     if (!user) {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
     
     // Check password
     const isMatch = await user.comparePassword(password);
+    
     if (!isMatch) {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
     
-    // Create JWT token
+    // Generate JWT token
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
     
     res.json({
@@ -100,20 +101,20 @@ router.post('/login', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error(error);
+    console.error('Login error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-// Google login
+// Google OAuth login
 router.post('/google', async (req, res) => {
   try {
     const { token } = req.body;
+    const client = new OAuth2Client();
     
-    // Verify Google token
-    const ticket = await googleClient.verifyIdToken({
+    const ticket = await client.verifyIdToken({
       idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID
+      audience: process.env.GOOGLE_CLIENT_ID // Optional
     });
     
     const payload = ticket.getPayload();
@@ -127,22 +128,20 @@ router.post('/google', async (req, res) => {
       user = new User({
         name,
         email,
-        provider: 'google',
-        providerId: sub,
-        avatar: picture
+        password: await bcrypt.hash(Math.random().toString(36).substring(2), 10),
+        avatar: picture,
+        googleId: sub
       });
       
       await user.save();
-    } else {
-      // Update user if needed
-      if (user.provider !== 'google') {
-        user.provider = 'google';
-        user.providerId = sub;
-        await user.save();
-      }
+    } else if (!user.googleId) {
+      // Update existing user with Google ID
+      user.googleId = sub;
+      user.avatar = picture || user.avatar;
+      await user.save();
     }
     
-    // Create JWT token
+    // Generate JWT token
     const jwtToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
     
     res.json({
@@ -155,7 +154,7 @@ router.post('/google', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error(error);
+    console.error('Google auth error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -172,7 +171,7 @@ router.get('/me', auth, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error(error);
+    console.error('Get user error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });

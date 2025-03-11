@@ -98,10 +98,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginWithGoogle = async () => {
     setIsLoading(true);
     try {
-      // This is a mock implementation since we need Google SDK integration
-      // In a real app, you would use the Google Sign-In SDK
+      // In a real implementation, you would use the Google Sign-In SDK
+      // and then send the token to your backend
+      toast.error('Real Google login requires frontend integration');
       
-      // Mock Google login for demonstration
+      // For demonstration purposes, we'll use a mock implementation
       const mockGoogleUser = {
         id: '2',
         name: 'Google User',
@@ -113,7 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('user', JSON.stringify(mockGoogleUser));
       localStorage.setItem('token', 'mock-jwt-token');
       
-      toast.success('Logged in with Google');
+      toast.success('Logged in with Google (mock)');
       navigate('/dashboard');
     } catch (error: any) {
       console.error('Google login error:', error);
@@ -128,8 +129,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       // Mock GitHub login for demonstration
-      // In a real app, you would use GitHub OAuth flow
-      
       const mockGithubUser = {
         id: '3',
         name: 'GitHub User',
@@ -141,7 +140,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('user', JSON.stringify(mockGithubUser));
       localStorage.setItem('token', 'mock-jwt-token');
       
-      toast.success('Logged in with GitHub');
+      toast.success('Logged in with GitHub (mock)');
       navigate('/dashboard');
     } catch (error: any) {
       console.error('GitHub login error:', error);

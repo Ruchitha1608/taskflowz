@@ -1,3 +1,4 @@
+
 import { format } from 'date-fns';
 
 export type Task = {
@@ -78,7 +79,12 @@ export const getTask = async (id: string): Promise<Task> => {
 export const createTask = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Promise<Task> => {
   const data = await apiRequest('/tasks', {
     method: 'POST',
-    body: JSON.stringify(task)
+    body: JSON.stringify({
+      title: task.title,
+      description: task.description || '',
+      dueDate: task.dueDate,
+      files: task.files || []
+    })
   });
   return transformTask(data);
 };
@@ -105,7 +111,7 @@ export const completeTask = async (id: string): Promise<Task> => {
 };
 
 // File APIs
-export const uploadFile = async (file: globalThis.File): Promise<File> => {
+export const uploadFile = async (file: File): Promise<File> => {
   // For real implementation, you would use FormData and upload to your server
   // For now, we'll keep the mock implementation
   await new Promise(resolve => setTimeout(resolve, 1000));
@@ -119,11 +125,11 @@ export const uploadFile = async (file: globalThis.File): Promise<File> => {
 };
 
 export const deleteFile = async (taskId: string, fileId: string): Promise<void> => {
-  // In a real implementation, this would call your API
+  const task = await getTask(taskId);
   await apiRequest(`/tasks/${taskId}`, {
     method: 'PUT',
     body: JSON.stringify({
-      files: (await getTask(taskId)).files.filter(file => file.id !== fileId)
+      files: task.files.filter(file => file.id !== fileId)
     })
   });
 };
