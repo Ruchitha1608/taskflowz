@@ -141,7 +141,7 @@ export const completeTask = async (id: string): Promise<Task> => {
 };
 
 // File APIs
-export const uploadFile = async (file: File): Promise<File> => {
+export const uploadFile = async (file: globalThis.File): Promise<File> => {
   await new Promise(resolve => setTimeout(resolve, 1000));
   return {
     id: Math.random().toString(36).substring(2, 9),
