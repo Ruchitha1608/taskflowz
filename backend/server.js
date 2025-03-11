@@ -25,6 +25,7 @@ mongoose.connect(process.env.MONGODB_URI)
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
 
+
 // Basic route for testing
 app.get('/', (req, res) => {
   res.send('Task Management API is running');

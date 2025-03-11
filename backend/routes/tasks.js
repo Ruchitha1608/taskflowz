@@ -3,8 +3,17 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const Task = require('../models/Task');
 const router = express.Router();
+const nodemailer = require('nodemailer');
 
 // Authentication middleware
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'your-email@gmail.com', // Replace with your email
+    pass: 'your-email-password'   // Replace with your app password
+  }
+});
+
 const auth = async (req, res, next) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -112,6 +121,7 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+
 // Mark a task as complete
 router.patch('/:id/complete', async (req, res) => {
   try {
@@ -124,11 +134,24 @@ router.patch('/:id/complete', async (req, res) => {
     task.completed = true;
     await task.save();
     
+    // Send completion email
+    if (task.user && task.user.email) {
+      const mailOptions = {
+        from: 'your-email@gmail.com',
+        to: task.user.email,
+        subject: 'Task Completed: ' + task.title,
+        text: `Hello,\n\nYour task "${task.title}" has been successfully completed. Great job!\n\nRegards,\nTask Manager`
+      };
+      await transporter.sendMail(mailOptions);
+      console.log(`Completion email sent to ${task.user.email} for task: ${task.title}`);
+    }
+    
     res.json(task);
   } catch (error) {
     console.error('Complete task error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
+
 
 module.exports = router;
