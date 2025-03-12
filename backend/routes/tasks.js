@@ -9,8 +9,8 @@ const nodemailer = require('nodemailer');
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'your-email@gmail.com', // Replace with your email
-    pass: 'your-email-password'   // Replace with your app password
+    user: 'vinuureddy555@gmail.com', // Replace with your email
+    pass: 'pwiz rvxa sots bcyy'   // Replace with your app password
   }
 });
 
@@ -137,7 +137,7 @@ router.patch('/:id/complete', async (req, res) => {
     // Send completion email
     if (task.user && task.user.email) {
       const mailOptions = {
-        from: 'your-email@gmail.com',
+        from: 'vinuureddy555@gmail.com',
         to: task.user.email,
         subject: 'Task Completed: ' + task.title,
         text: `Hello,\n\nYour task "${task.title}" has been successfully completed. Great job!\n\nRegards,\nTask Manager`

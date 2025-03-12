@@ -3,6 +3,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { cn } from '@/lib/utils';
+
 import { 
   CheckSquare, 
   PlusCircle, 
@@ -25,6 +26,8 @@ import {
   AvatarFallback, 
   AvatarImage 
 } from '@/components/ui/avatar';
+import NotificationBadge from "../ui/NotificationBadge";
+
 
 const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
@@ -69,11 +72,6 @@ const Navbar: React.FC = () => {
         <div className="ml-auto flex items-center space-x-4">
           {user ? (
             <>
-              <button className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring h-9 w-9">
-                <Bell className="h-5 w-5" />
-                <span className="sr-only">Notifications</span>
-              </button>
-              
               <DropdownMenu>
                 <DropdownMenuTrigger className="focus:outline-none">
                   <Avatar className="h-8 w-8 transition-opacity hover:opacity-80">

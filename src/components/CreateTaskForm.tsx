@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
-import { Task, File as TaskFile } from '@/lib/api';
+import { Task } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import FileUploader from './FileUploader';
 import { Button } from '@/components/ui/button';
@@ -29,9 +28,7 @@ import {
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100),
   description: z.string().max(500).optional(),
-  dueDate: z.date({
-    required_error: 'Due date is required',
-  }),
+  dueDate: z.date({ required_error: 'Due date is required' }),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -48,7 +45,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
   onCancel,
 }) => {
   const [files, setFiles] = useState<File[]>(
-    initialData?.files.map(file => new File([], file.name, { type: file.type })) || []
+    initialData?.files?.map(file => new File([], file.name, { type: file.type })) || []
   );
 
   const form = useForm<FormValues>({
@@ -57,7 +54,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
       ? {
           title: initialData.title,
           description: initialData.description,
-          dueDate: initialData.dueDate,
+          dueDate: new Date(initialData.dueDate),
         }
       : {
           title: '',
@@ -67,7 +64,6 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
   });
 
   const handleFormSubmit = (values: FormValues) => {
-    // Ensure we have all required fields
     const taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'> = {
       title: values.title,
       description: values.description || "",
@@ -112,11 +108,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
             <FormItem>
               <FormLabel>Description</FormLabel>
               <FormControl>
-                <Textarea 
-                  placeholder="Add details about this task" 
-                  {...field} 
-                  value={field.value || ''}
-                />
+                <Textarea placeholder="Add details about this task" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -134,16 +126,9 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
                   <FormControl>
                     <Button
                       variant="outline"
-                      className={cn(
-                        "w-full pl-3 text-left font-normal",
-                        !field.value && "text-muted-foreground"
-                      )}
+                      className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
                     >
-                      {field.value ? (
-                        format(field.value, "PPP")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
+                      {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
                       <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                     </Button>
                   </FormControl>
@@ -176,11 +161,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
 
         <div className="flex justify-end gap-2">
           {onCancel && (
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={onCancel}
-            >
+            <Button type="button" variant="outline" onClick={onCancel}>
               Cancel
             </Button>
           )}
